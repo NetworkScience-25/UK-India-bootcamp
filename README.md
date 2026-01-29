@@ -4,6 +4,8 @@
 - It is **mandatory** that every Pull Request includes a **Markdown (`.md`) file** containing:
   - Your **name**
   - Your **email address**
+  - Your **group number**
+  - **Names of all group members**
 
 ### Admin / Evaluator Guidelines
 
@@ -11,3 +13,4 @@
   - **Create a new branch**
   - Name the branch using **their own name**
   - Perform all evaluation and review activities within that branch
+
