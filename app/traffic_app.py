@@ -374,7 +374,7 @@ with story_col:
             },
         ]
     )
-    st.dataframe(corridor_df, hide_index=True, use_container_width=True)
+    st.dataframe(corridor_df, hide_index=True, width="stretch")
 
     st.markdown("### Recent speed trend")
     combined_trend = (
@@ -392,7 +392,7 @@ with story_col:
 with map_col:
     st.subheader("Route snapshot")
     if route_geom.deck:
-        st.pydeck_chart(route_geom.deck, use_container_width=True)
+        st.pydeck_chart(route_geom.deck, width="stretch")
         st.caption(f"Approximate aerial distance: {distance_km:.1f} km")
     else:
         st.info("Map preview unavailable for the chosen areas.")
