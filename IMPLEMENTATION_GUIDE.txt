@@ -1,0 +1,70 @@
+Implementation Guide
+====================
+
+Purpose
+-------
+Bengaluru logistics trip planner delivering traffic prediction, compliance enforcement, and operating cost intelligence through a single Streamlit application.
+
+Source Layout
+-------------
+- app/traffic_app.py: Streamlit entry point orchestrating UI, inference, costs, and gating.
+- app/data_utils.py: Dataset location helpers and loaders.
+- app/traffic_model.py: RandomForestRegressor training and prediction helpers.
+- app/rule_engine.py: RouteContext dataclass and Bengaluru-specific restriction rules.
+- app/route_utils.py: Coordinate lookup, distance heuristics, and pydeck map builder.
+- app/microhub.py: Micro-hub scoring utilities (integration hook for relay planning).
+- Banglore_traffic_Dataset.csv: Historical corridor metrics powering the model.
+- requirements.txt: Python dependency manifest.
+
+System Architecture
+-------------------
+- Frontend runtime: Streamlit 1.31+ renders sidebar planners, trip metrics, charts, and maps.
+- Data tier: Pandas dataframe cached via @st.cache_data after loading Banglore_traffic_Dataset.csv.
+- Model layer: RandomForestRegressor trained on corridor history and cached with @st.cache_resource for reuse.
+- Domain logic: Rule objects capture policy constraints; route_utils supplies geometry and distance; microhub module supports optional relay insights.
+- Costing engine: Static rate tables per vehicle class and service priority multipliers embedded in traffic_app.py.
+
+Execution Flow
+--------------
+1. User inputs start/destination areas and roads, payload tonnage, vehicle class, service priority, departure hour, travel day, optional incident override, and corridor traffic adjustments.
+2. build_feature_payload samples the latest corridor observation, appends temporal features, and applies overrides before model inference.
+3. predict_metrics runs separately for origin and destination payloads; outputs averaged for route travel time index.
+4. Rule checks form RouteContext for both endpoints; any triggered restriction blocks the trip and surfaces policy details.
+5. Travel time derived from averaged corridor speed and pydeck distance, amplified by travel_time_index and vehicle time factor.
+6. Cost estimator combines per-kilometer and per-hour rates, scaled by priority surcharge, and renders KPI plus textual breakdown.
+7. Dashboard displays metrics, corridor outlook table, 14-day speed trend line chart, and pydeck route snapshot.
+
+Key Algorithms and Heuristics
+-----------------------------
+- Vehicle inference: Payload-to-class mapping via resolve_vehicle_type, with manual override allowed.
+- Vehicle drag: travel time scaled by VEHICLE_TIME_FACTOR to simulate handling penalties for larger fleets.
+- Cost estimation: Distance cost + time cost multiplied by PRIORITY_SURCHARGE; outputs formatted in INR.
+- Restriction evaluation: Rule.applies enforces area, road, vehicle type, hour window, and day filters using inclusive start and exclusive end hours.
+- Mapping fallback: Deterministic AREA_COORDS and haversine approximation maintain visuals when precise routing unavailable.
+
+Operations and Execution
+------------------------
+- Launch command: python3 main.py (Streamlit host at http://localhost:8501).
+- Dependencies installed with pip install -r requirements.txt.
+- Streamlit caching keeps sessions responsive; clear cache when updating dataset or model code.
+- Console logs surface stack traces and pydeck warnings; no separate logging pipeline configured.
+
+Extensibility Notes
+-------------------
+- Data freshness: Swap dataset loader for API or warehouse source while maintaining schema compatibility.
+- Model lifecycle: Externalize training to scheduled job, persisting estimator artifacts rather than training on startup.
+- Routing fidelity: Expand AREA_COORDS or integrate third-party routing API for polyline accuracy.
+- Compliance management: Move rule definitions to configuration for non-code updates; add admin interface for policy changes.
+- Additional panels: Activate microhub_scores output for relay recommendations; provide fleet summary dashboards.
+
+Testing and Validation
+----------------------
+- Manual QA: Use UI scenarios to confirm restriction blocking, cost adjustments per vehicle, and slider constraints.
+- Automated tests: Add pytest coverage for Rule.applies, cost calculator, and build_feature_payload behavior.
+- Known risks: Dataset quality assumptions, aerial distance approximation, static rate/ rule tables requiring manual maintenance.
+
+Knowledge Transfer
+------------------
+- Share this guide with dispatch, operations, and engineering teams to align on implementation details.
+- Maintain rate cards and rules in centralized configuration for quick updates.
+- Document operational runbook covering dependency updates, cache resets, and dataset refresh cadence.
